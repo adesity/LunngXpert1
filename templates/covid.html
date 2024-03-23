@@ -152,19 +152,19 @@
             <div class="col">
                 <div class="form-group">
                     <input type="checkbox" id="taste" name="taste">
-                    <label for="vehicle1"> Loss of Taste</label>
+                    <label for="taste"> Loss of Taste</label>
                 </div>
             </div>
             <div class="col">
                 <div class='form-group'>
                     <input type="checkbox" id="smell" name="smell">
-                    <label for="vehicle2"> Loss of Smell</label><br>
+                    <label for="smell"> Loss of Smell</label><br>
                 </div>
             </div>
             <div class="col">
                 <div class='form-group'>
                     <input type="checkbox" id="breathe" name="breathe">
-                    <label for="vehicle3"> Breathing Shortness</label><br>
+                    <label for="breathe"> Breathing Shortness</label><br>
                 </div>
             </div>
         </div>
@@ -184,11 +184,66 @@
 
     </form>
 
+
     <!-- Option 1: Bootstrap Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
         crossorigin="anonymous"></script>
 
+
+
+        <script>
+            // Wait for the DOM to be fully loaded
+            document.addEventListener('DOMContentLoaded', function () {
+                // Get the form element
+                var form = document.querySelector('.main-form');
+        
+                // Add a submit event listener to the form
+                form.addEventListener('submit', function (event) {
+                    // Prevent the form from submitting
+                    event.preventDefault();
+        
+                    // Validate the form inputs
+                    var firstname = document.getElementById('firstname').value.trim();
+                    var lastname = document.getElementById('lastname').value.trim();
+                    var phone = document.getElementById('phone').value.trim();
+                    var aadhar = document.getElementById('aadhar').value.trim();
+                    var email = document.getElementById('email').value.trim();
+                    var age = document.getElementById('age').value.trim();
+                    var address = document.getElementById('address').value.trim();
+                    var file = document.getElementById('file').value.trim();
+                    var gender = document.getElementById('gender').value.trim();
+        
+                    // Validation flags
+                    var isValid = true;
+        
+                    // Validation for phone number
+                    if (phone.length !== 10 || isNaN(phone)) {
+                        alert('Phone number must be 10 digits long.');
+                        isValid = false;
+                    }
+        
+                    // Validation for Aadhar number
+                    if (aadhar.length !== 12 || isNaN(aadhar)) {
+                        alert('Aadhar number must be 12 digits long.');
+                        isValid = false;
+                    }
+        
+                    // Validation for age
+                    if (age <= 0 || age >= 100 || isNaN(age)) {
+                        alert('Age must be a valid number between 1 and 99.');
+                        isValid = false;
+                    }
+        
+                    // If all validations pass, submit the form
+                    if (isValid) {
+                        // You can choose to submit the form programmatically
+                        form.submit();
+                    }
+                });
+            });
+        </script>
+        
 
 </body>
 

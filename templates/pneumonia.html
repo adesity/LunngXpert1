@@ -171,6 +171,59 @@
         crossorigin="anonymous"></script>
 
 
+        <script>
+            // Wait for the DOM to be fully loaded
+            document.addEventListener('DOMContentLoaded', function () {
+                // Get the form element
+                var form = document.querySelector('.main-form');
+        
+                // Add a submit event listener to the form
+                form.addEventListener('submit', function (event) {
+                    // Prevent the form from submitting
+                    event.preventDefault();
+        
+                    // Validate the form inputs
+                    var firstname = document.getElementById('firstname').value.trim();
+                    var lastname = document.getElementById('lastname').value.trim();
+                    var phone = document.getElementById('phone').value.trim();
+                    var aadhar = document.getElementById('aadhar').value.trim();
+                    var email = document.getElementById('email').value.trim();
+                    var age = document.getElementById('age').value.trim();
+                    var address = document.getElementById('address').value.trim();
+                    var file = document.getElementById('file').value.trim();
+                    var gender = document.getElementById('gender').value.trim();
+        
+                    // Validation flags
+                    var isValid = true;
+        
+                    // Validation for phone number
+                    if (phone.length !== 10 || isNaN(phone)) {
+                        alert('Phone number must be 10 digits long.');
+                        isValid = false;
+                    }
+        
+                    // Validation for Aadhar number
+                    if (aadhar.length !== 12 || isNaN(aadhar)) {
+                        alert('Aadhar number must be 12 digits long.');
+                        isValid = false;
+                    }
+        
+                    // Validation for age
+                    if (age <= 0 || age >= 100 || isNaN(age)) {
+                        alert('Age must be a valid number between 1 and 99.');
+                        isValid = false;
+                    }
+        
+                    // If all validations pass, submit the form
+                    if (isValid) {
+                        // You can choose to submit the form programmatically
+                        form.submit();
+                    }
+                });
+            });
+        </script>
+        
+
 </body>
 
 </html>
