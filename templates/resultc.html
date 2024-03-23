@@ -106,6 +106,24 @@
                     <p> Gender: {{gender}}</p>
                     <p> Aadhar No.: {{aadhar}}</p>
                     <p> Address: {{address}}</p>
+                    {% if r==0 %}
+                    {% if  taste_checked or smell_checked or breathe_checked%}
+                    
+                    <div>
+                        <p>Additional Symptoms :<br> 
+                        {%if taste_checked%}
+                            Loss of taste<br>
+                        {% endif %}
+                        {%if smell_checked%}
+                            Loss of smell<br>
+                        {% endif %}
+                        {%if breathe_checked%}
+                            Breathing Shortness<br>
+                        {% endif %}
+                    </p>                      
+                    </div>
+                    {% endif %}
+                    {% endif %}
 
                     {% if r==1 %}
                     <div>

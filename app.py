@@ -1,4 +1,7 @@
-from flask import Flask, flash, request, redirect, url_for, render_template,url_for
+from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
+
 import urllib.request
 import os
 from werkzeug.utils import secure_filename
@@ -21,9 +24,12 @@ covid_model = load_model('models\covid.h5')
 UPLOAD_FOLDER = 'static/uploads'
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg'])
 
+
 app = Flask(__name__)
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+db = SQLAlchemy(app)
 app.secret_key = "lungxpert"
 
 def allowed_file(filename):
@@ -54,6 +60,10 @@ def send_email_with_data( receiver_email, subject, data):
             .negative {{
                 color: green;
                 font-weight: bold;
+            }}
+            
+            .PNEUMONIA{{
+                display:None;
             }}
         </style>
     </head>
@@ -93,6 +103,10 @@ def send_email_with_data( receiver_email, subject, data):
                 <td>Address</td>
                 <td>{}</td>
             </tr>
+            <tr class = {}>
+                <td>Additional Symptoms</td>
+                <td>{}</td>
+            </tr>
             <tr>
                 <td>Result</td>
                 <td class="{}">{}</td>
@@ -100,7 +114,7 @@ def send_email_with_data( receiver_email, subject, data):
         </table>
     </body>
     </html>
-    """.format(data['type'],data['firstname'], data['lastname'], data['email'], data['phone'],data['aadhar'], data['gender'].upper(), data['age'],data['address'] ,data['message'].lower(), data['message'])
+    """.format(data['type'],data['firstname'], data['lastname'], data['email'], data['phone'],data['aadhar'], data['gender'].upper(), data['age'],data['address'] ,data['type'],data['symptoms'],data['res'].lower(), data['message'])
     message = MIMEMultipart("alternative")
     message["From"] = 'aditidagadkhair3011@gmail.com'
     message["To"] = receiver_email
@@ -114,7 +128,52 @@ def send_email_with_data( receiver_email, subject, data):
         server.login('aditidagadkhair3011@gmail.com', 'esahbdetgodyhzoz')
         server.sendmail('aditidagadkhair3011@gmail.com', receiver_email, message.as_string())
 
+# Models
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(100), unique=True, nullable=False)
+    password = db.Column(db.String(100), nullable=False)
 
+#Authentication
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        hashed_password = generate_password_hash(password, method='sha256')
+        new_user = User(username=username, password=hashed_password)
+
+        db.session.add(new_user)
+        db.session.commit()
+
+        flash('Registration successful. Please log in.', 'success')
+        return redirect(url_for('login'))
+    
+    return render_template('register.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        user = User.query.filter_by(username=username).first()
+
+        if user and check_password_hash(user.password, password):
+            session['username'] = username  # Store username in session
+            flash('Login successful!', 'success')
+            return redirect(url_for('services'))
+        else:
+            flash('Invalid username or password. Please try again.', 'error')
+
+    return render_template('login.html')
+
+@app.route('/logout',methods=['GET','POST'])
+def logout():
+    session.pop('username', None)
+    flash('You have been logged out.', 'info')
+    return redirect(url_for('login'))
 ########################### Routing Functions ########################################
 
 @app.route('/')
@@ -126,7 +185,10 @@ def about():
 
 @app.route('/services')
 def services():
-    return render_template('services.html')
+    if 'username' in session:
+        return render_template('services.html')
+    else:
+        return redirect(url_for('login'))
 @app.route('/faq')
 def faq():
     return render_template('faq.html')
@@ -137,11 +199,17 @@ def treatment():
 
 @app.route('/pneumonia')
 def pneumonia():
-    return render_template('pneumonia.html')
+    if 'username' in session:
+        return render_template('pneumonia.html')
+    else:
+        return redirect('/login')
 
 @app.route('/covid')
 def covid():
-    return render_template('covid.html')
+    if 'username' in session:
+        return render_template('covid.html')
+    else:
+        return redirect('/login')
 
 
 ########################### Result Functions ########################################
@@ -169,12 +237,15 @@ def resultp():
             img = img/255.0
             pred = pneumonia_model.predict(img)
             message = "Pneumonia Negative"
+            res = 'negative'
             if pred < 0.5:
                 pred = 0
             else:
                 message = "Pneumonia Positive"
+                res = 'positive'
                 pred = 1
             # send_email(email=email,message=message)
+            
             data = {
                  'firstname': firstname,
                  'lastname': lastname,
@@ -185,10 +256,13 @@ def resultp():
                  'message' : message,
                  'type' : 'PNEUMONIA',
                  'aadhar': aadhar,
-                 'address' : address
+                 'address' : address,
+                 'res' : res,
+                 'symptoms': None
+                 
                 }
             send_email_with_data(receiver_email=email,subject="Pneumonia Test Report",data=data)
-            return render_template('resultp.html', filename=filename, fn=firstname, ln=lastname, age=age, r=pred, gender=gender,aadhar=aadhar, address=address, smell=smell, taste=taste, breathe=breathe)
+            return render_template('resultp.html', filename=filename, fn=firstname, ln=lastname, age=age, r=pred, gender=gender,aadhar=aadhar, address=address)
 
         else:
             flash('Allowed image types are - png, jpg, jpeg')
@@ -204,6 +278,9 @@ def resultc():
         age = request.form['age']
         aadhar = request.form['aadhar']
         address = request.form['address']
+        taste_checked = request.form.get('taste')
+        smell_checked = request.form.get('smell')
+        breathe_checked = request.form.get('breathe')
         file = request.files['file']
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
@@ -215,11 +292,22 @@ def resultc():
             img = img/255.0
             pred = covid_model.predict(img)
             message = "Covid Negative"
+            res = 'negative'
             if pred < 0.5:
                 pred = 0
+                res='positive'
                 message = "Covid Positive"
             else:
                 pred = 1
+            symptoms_str = ["Loss of Smell", "Loss of Taste","Breathing Shortness"]
+            symptoms_list = [smell_checked,taste_checked,breathe_checked]
+            for i in range(0,3):
+                if symptoms_list[i] == None:
+                    symptoms_str[i] = None
+            print(symptoms_list)
+            symptoms='None'
+            if pred==0:
+                symptoms = ','.join(filter(None, symptoms_str))
             data = {
                  'firstname': firstname,
                  'lastname': lastname,
@@ -228,16 +316,20 @@ def resultc():
                  'gender': gender,
                  'age': age,
                  'message' : message,
-                 'type' : 'COVID 19',
+                 'type' : 'COVID19',
                  'aadhar': aadhar,
-                 'address' : address
+                 'address' : address,
+                 'res' : res,
+                 'symptoms': symptoms
                 }
+
             send_email_with_data(receiver_email=email,subject="Covid 19 Test Report",data=data)
-            return render_template('resultc.html', filename=filename, fn=firstname, ln=lastname, age=age, r=pred, gender=gender,aadhar=aadhar,address=address)
+            return render_template('resultc.html', filename=filename, fn=firstname, ln=lastname, age=age, r=pred, gender=gender,aadhar=aadhar,address=address,taste_checked=taste_checked,smell_checked=smell_checked,breathe_checked=breathe_checked,result=res)
 
         else:
             flash('Allowed image types are - png, jpg, jpeg')
             return redirect(request.url)
+
 
 
 # No caching at all for API endpoints.
@@ -253,4 +345,6 @@ def add_header(response):
 
 
 if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
     app.run(debug=True)

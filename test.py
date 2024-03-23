@@ -1,18 +1,10 @@
-data = {
-                 'firstname': 'Adi',
-                 'lastname': 'D',
-                 'email': 'email',
-                 'phone': 'phone',
-                 'gender': 'gender',
-                 'age': 50,
-                 'filename' : 'filename',
-                 'message' : 'message'
-                }
+# Assuming smell_checked, taste_checked, breathe_checked are already defined
+smell_checked = 'Yes'
+taste_checked = None
+breathe_checked = 'breathe'
+symptoms = [smell_checked, taste_checked, breathe_checked]
 
-with open('./static/reports/data.txt', 'w') as file:
-        file.write("First Name: {}\n".format(data.get('firstname')))
-        file.write("Last Name: {}\n".format(data.get('lastname')))
-        file.write("Email: {}\n".format(data.get('email')))
-        file.write("Phone: {}\n".format(data.get('phone')))
-        file.write("Gender: {}\n".format(data.get('gender')))
-        file.write("Age: {}\n".format(data.get('age')))
+# Filter out None values and join the non-None values with comma
+symptoms_concatenated = ','.join(filter(None, symptoms))
+
+print(symptoms_concatenated)
